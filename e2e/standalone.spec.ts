@@ -77,7 +77,7 @@ test.describe('portal standalone (no app19 needed)', () => {
   test('runtime config: /config.json is fetched and served', async ({ request }) => {
     const res = await request.get('/config.json');
     expect(res.ok()).toBeTruthy();
-    expect(await res.json()).toEqual({ remotes: { app19: 'http://localhost:5190/remoteEntry.js' } });
+    expect(await res.json()).toEqual({ mode: 'bundled', remotes: { app19: 'http://localhost:5190/remoteEntry.js' } });
   });
 
   test('exposes ./UsersPage and ./ProfileCard in remoteEntry.js', async ({ request }) => {

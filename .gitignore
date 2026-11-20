@@ -8,3 +8,5 @@ blob-report
 .env.local
 infra/cdk.out
 infra/node_modules
+lib-dist
+lib-pack

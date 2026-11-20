@@ -2,7 +2,8 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { federation } from '@module-federation/vite';
 
-// Static default for app19's remoteEntry. Overridden at runtime by /config.json (ADR 0002).
+// Build-time default for app19's remoteEntry, used only in `"mode": "remote"` (ADR 0002/0004).
+// Overridden at runtime by /config.json.
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   const APP19_ENTRY = env.VITE_REMOTE_APP19 || 'http://localhost:5190/remoteEntry.js';
@@ -17,15 +18,9 @@ export default defineConfig(({ mode }) => {
           './UsersPage': './src/exposed/UsersPage.tsx',
           './ProfileCard': './src/exposed/ProfileCard.tsx',
         },
-        remotes: {
-          app19: {
-            type: 'module',
-            name: 'app19',
-            entry: APP19_ENTRY,
-            entryGlobalName: 'app19',
-            shareScope: 'default',
-          },
-        },
+        // No static `remotes` (ADR 0004): the default "bundled" mode imports @mfe/app19-features at build time,
+        // and a static remote would make the plugin preload / eagerly fetch app19's remoteEntry.js.
+        // In "remote" mode src/mfe/runtime.ts registers app19 at runtime from /config.json.
         // Contract §2: never share react / react-dom / jsx-runtime across majors.
         shared: {},
         shareStrategy: 'loaded-first',

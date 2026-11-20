@@ -1,14 +1,17 @@
-import { test, expect, shell } from './fixtures';
+import { test, expect, shell, expectFeatureMode, APP19_ENTRY } from './fixtures';
 
-// Requires ../react19-app (or $APP19_DIR) previewing on :5190 — playwright.config starts it.
+// @cross: run in the default "bundled" project (app19 features from @mfe/app19-features, no app19 server)
+// and, with REMOTE=1, again in the "remote" project (runtime federation from app19 on :5190).
+// @remote: transport-specific (remoteEntry.js fetch / config.json URL override) — remote mode only.
 // Selectors inside remotes ([data-testid=stats-widget-value], kpi-total-value, customer-*)
 // come from react19-app's exposed components.
 
 const REACT19 = /^19\./;
 
 test.describe('portal17 hosting app19 @cross', () => {
-  test('/dashboard renders R19 DashboardPage inside the R17 shell with host customers', async ({ page }) => {
+  test('/dashboard renders R19 DashboardPage inside the R17 shell with host customers', async ({ page, featureMode, siblingRequests }) => {
     await page.goto('/dashboard');
+    await expectFeatureMode(page, featureMode);
     const remote = page.locator('[data-remote="app19/DashboardPage"] > [data-mfe="DashboardPage"]');
     await expect(remote).toBeVisible();
     await expect(remote).toHaveAttribute('data-react-version', REACT19);
@@ -17,6 +20,9 @@ test.describe('portal17 hosting app19 @cross', () => {
     await expect(page.getByTestId('customer-count')).toHaveText('6');
     await expect(remote.getByTestId('kpi-total-value')).toHaveText('6');
     await expect(page.getByTestId('remote-loading')).toHaveCount(0);
+    // bundled: nothing from :5190 (also enforced by the fixture); remote: loaded via app19's remoteEntry.js
+    if (featureMode === 'remote') expect(siblingRequests).toContain(APP19_ENTRY);
+    else expect(siblingRequests).toEqual([]);
   });
 
   test('host theme prop reaches the remote via update()', async ({ page }) => {
@@ -99,7 +105,7 @@ test.describe('portal17 hosting app19 @cross', () => {
   });
 });
 
-test.describe('app19 unavailable @cross', () => {
+test.describe('app19 remoteEntry unavailable @remote', () => {
   test.use({
     // Chrome logs the aborted request; nothing else may log.
     allowedConsoleErrors: [/Failed to load resource/],
@@ -133,7 +139,7 @@ test.describe('app19 unavailable @cross', () => {
   });
 });
 
-test.describe('runtime remote config (ADR 0002) @cross', () => {
+test.describe('runtime remote config (ADR 0002) @remote', () => {
   test.use({ allowedConsoleErrors: [/Failed to load resource/] });
 
   test('config.json override wins over the build-time default', async ({ page }) => {
@@ -142,7 +148,7 @@ test.describe('runtime remote config (ADR 0002) @cross', () => {
       if (r.url().includes('remoteEntry.js')) entries.push(r.url());
     });
     await page.route('**/config.json', (r) =>
-      r.fulfill({ json: { remotes: { app19: 'http://localhost:5999/remoteEntry.js' } } }),
+      r.fulfill({ json: { mode: 'remote', remotes: { app19: 'http://localhost:5999/remoteEntry.js' } } }),
     );
     await page.goto('/dashboard');
     await expect(page.getByTestId('remote-error')).toBeVisible();
@@ -150,15 +156,39 @@ test.describe('runtime remote config (ADR 0002) @cross', () => {
     expect(entries.filter((u) => u.includes(':5190/'))).toEqual([]);
   });
 
-  for (const [name, fulfill] of [
-    ['404', { status: 404, body: 'nope' }],
-    ['empty object', { json: {} }],
-    ['invalid JSON', { status: 200, contentType: 'application/json', body: '{not json' }],
-  ] as const) {
-    test(`config.json ${name} falls back to the default app19 URL`, async ({ page }) => {
-      await page.route('**/config.json', (r) => r.fulfill(fulfill));
-      await page.goto('/dashboard');
-      await expect(page.locator('[data-mfe="DashboardPage"]')).toHaveAttribute('data-react-version', REACT19);
-    });
-  }
+  test('remote mode without remotes uses the build-time default app19 URL', async ({ page }) => {
+    await page.route('**/config.json', (r) => r.fulfill({ json: { mode: 'remote' } }));
+    await page.goto('/dashboard');
+    await expect(page.locator('[data-mfe="DashboardPage"]')).toHaveAttribute('data-react-version', REACT19);
+  });
+});
+
+// Bundled-mode analogue of "app19 remoteEntry unavailable" (runs in the "bundled" project only): the
+// feature's code-split chunk from @mfe/app19-features fails to load → fallback; Retry re-imports it.
+test.describe('bundled feature chunk failure (mode "bundled")', () => {
+  test.use({ allowedConsoleErrors: [/Failed to load resource/] });
+
+  test('chunk load failure shows remote-error fallback; shell keeps working; retry recovers', async ({ page, featureMode }) => {
+    test.skip(featureMode !== 'bundled', 'bundled mode only');
+    let block = true;
+    await page.route('**/assets/DashboardPage-*.js', (route) => (block ? route.abort() : route.continue()));
+
+    await page.goto('/dashboard');
+    const error = page.getByTestId('remote-error');
+    await expect(error).toBeVisible();
+    await expect(error).toHaveAttribute('role', 'alert');
+    await expect(error).toContainText('app19/DashboardPage');
+    await expect(shell(page)).toHaveAttribute('data-react-version', '17.0.2');
+    await expect(page.getByTestId('customer-count')).toHaveText('6');
+
+    await page.getByRole('link', { name: 'Users' }).click();
+    await expect(page.getByTestId('users-table')).toBeVisible();
+
+    await page.getByRole('link', { name: 'Dashboard' }).click();
+    await expect(page.getByTestId('remote-error')).toBeVisible();
+    block = false;
+    await page.getByTestId('remote-retry').click();
+    await expect(page.locator('[data-mfe="DashboardPage"]')).toHaveAttribute('data-react-version', REACT19);
+    await expect(page.getByTestId('remote-error')).toHaveCount(0);
+  });
 });

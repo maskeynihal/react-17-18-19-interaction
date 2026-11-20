@@ -1,4 +1,5 @@
 {
+  "mode": "bundled",
   "remotes": {
     "app19": "http://localhost:5190/remoteEntry.js"
   }
