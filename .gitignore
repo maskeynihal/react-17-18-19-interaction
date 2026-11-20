@@ -1,0 +1,8 @@
+node_modules/
+dist/
+lib-dist/
+lib-pack/
+test-results/
+playwright-report/
+cdk.out/
+.DS_Store
