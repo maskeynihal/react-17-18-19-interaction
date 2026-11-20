@@ -1,0 +1,55 @@
+/* Shared R17 widget styles. Everything is .r17-* scoped (contract rule 6) because
+   these files also ship inside exposed modules rendered on the React 19 host. */
+.r17-mfe-root {
+  font-family: Tahoma, Verdana, Geneva, sans-serif;
+  font-size: 13px;
+  color: #222;
+}
+.r17-mfe-root[data-theme='dark'] {
+  color: #e8e8e8;
+  background: #1f2633;
+  padding: 8px;
+}
+.r17-mfe-root[data-theme='dark'] .r17-table th { background: #34405a; color: #fff; }
+.r17-mfe-root[data-theme='dark'] .r17-table td { border-color: #3d4860; }
+.r17-input {
+  font: inherit;
+  padding: 3px 5px;
+  border: 1px solid #7f8a9b;
+  border-radius: 0;
+  background: #fff;
+  color: #222;
+  min-width: 220px;
+}
+.r17-input[aria-invalid='true'] { border-color: #b00020; background: #fff5f5; }
+.r17-btn {
+  font: inherit;
+  padding: 3px 12px;
+  border: 1px solid #6b7686;
+  background: linear-gradient(#ffffff, #d9dee6);
+  color: #222;
+  cursor: pointer;
+}
+.r17-btn:hover { background: linear-gradient(#ffffff, #c9d1dd); }
+.r17-btn--primary {
+  border-color: #1b2f4e;
+  background: linear-gradient(#4a6ea8, #2c4a7a);
+  color: #fff;
+}
+.r17-btn--primary:hover { background: linear-gradient(#5a7eb8, #2c4a7a); }
+.r17-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.r17-table th {
+  text-align: left;
+  background: #d9dee6;
+  border: 1px solid #9aa5b5;
+  padding: 4px 6px;
+}
+.r17-table td {
+  border: 1px solid #c5ccd6;
+  padding: 4px 6px;
+}
+.r17-table tbody tr:nth-child(even) { background: #f6f7f9; }

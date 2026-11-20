@@ -1,0 +1,9 @@
+{
+  "name": "@mfe/portal17-features",
+  "description": "react17-portal exposed features as self-contained ESM (React 17 bundled inside). Mount contract: mount(el, props) -> { update, unmount }.",
+  "outDir": "lib-dist",
+  "entries": {
+    "UsersPage": "UsersPageProps",
+    "ProfileCard": "ProfileCardProps"
+  }
+}
