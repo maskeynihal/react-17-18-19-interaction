@@ -1,0 +1,22 @@
+.r17-remote__loading {
+  padding: 12px;
+  color: #555;
+  font-style: italic;
+  border: 1px dashed #b5bcc8;
+  background: #f7f8fa;
+}
+.r17-remote__error {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #c0392b;
+  background: #fdecea;
+  color: #7b1d14;
+}
+.r17-remote__error-detail {
+  font-family: monospace;
+  font-size: 12px;
+  flex: 1 1 100%;
+}

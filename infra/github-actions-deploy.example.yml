@@ -1,0 +1,109 @@
+# Example only. Copy to .github/workflows/deploy.yml in the react17-portal repo.
+#
+# Uses GitHub OIDC -> IAM role (no static AWS keys).
+# Required GitHub configuration (per GitHub environment, e.g. "dev", "prod"):
+#   vars.AWS_DEPLOY_ROLE_ARN   arn:aws:iam::<account>:role/<github-deploy-role>
+#   vars.AWS_REGION            e.g. eu-west-1
+#   vars.ALLOWED_ORIGINS       JSON array, e.g. ["https://app.example.com"]
+#   vars.REMOTES               JSON object, e.g. {"app19":"https://app.example.com/remoteEntry.js"}
+# The IAM role trust policy must restrict
+#   token.actions.githubusercontent.com:sub = repo:<org>/react17-portal:environment:<env>
+# and allow sts:AssumeRole on the CDK bootstrap roles (cdk-hnb659fds-*).
+
+name: deploy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        default: dev
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-synth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            infra/package-lock.json
+
+      - name: Build app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Infra checks (no AWS credentials needed)
+        working-directory: infra
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npx cdk synth -q
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build-and-synth
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'dev' }}
+    permissions:
+      id-token: write   # OIDC
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: portal17-deploy-${{ github.run_id }}
+
+      - name: cdk deploy
+        working-directory: infra
+        env:
+          ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS }}
+          REMOTES: ${{ vars.REMOTES }}
+          ENV_NAME: ${{ inputs.environment || 'dev' }}
+        run: |
+          npm ci
+          ARGS=(-c "envName=$ENV_NAME")
+          [ -n "$ALLOWED_ORIGINS" ] && ARGS+=(-c "allowedOrigins=$ALLOWED_ORIGINS")
+          [ -n "$REMOTES" ] && ARGS+=(-c "remotes=$REMOTES")
+          npx cdk deploy Portal17WebStack --require-approval never --outputs-file cdk-outputs.json "${ARGS[@]}"
+          cat cdk-outputs.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cdk-outputs
+          path: infra/cdk-outputs.json
