@@ -1,0 +1,23 @@
+/* Standalone-shell only (imported by main.tsx, never by exposed modules). */
+html, body { margin: 0; }
+body { background: #f6f7fb; }
+body:has(.r19-shell[data-theme='dark']) { background: #12141b; }
+
+.r19-shell { min-height: 100vh; background: var(--r19-bg); }
+.r19-header {
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  padding: 12px 24px; background: var(--r19-surface); border-bottom: 1px solid var(--r19-border);
+}
+.r19-brand { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.r19-brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--r19-accent); }
+.r19-nav { display: flex; gap: 4px; flex: 1; }
+.r19-nav a { color: var(--r19-muted); text-decoration: none; padding: 6px 10px; border-radius: 8px; font-size: 0.9rem; }
+.r19-nav a:hover { color: var(--r19-text); }
+.r19-nav a.active { color: var(--r19-accent); background: var(--r19-accent-soft); font-weight: 600; }
+.r19-main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+.r19-banner {
+  padding: 10px 14px; border-radius: 10px; background: var(--r19-accent-soft);
+  border: 1px solid var(--r19-border);
+}
+.r19-legacy-frame { border: 1px dashed var(--r19-border); border-radius: 12px; padding: 12px; }
+.r19-legacy-meta { font-size: 0.8rem; color: var(--r19-muted); margin-bottom: 8px; }

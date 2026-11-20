@@ -1,0 +1,10 @@
+{
+  "name": "@mfe/app19-features",
+  "description": "react19-app exposed features as self-contained ESM (React 19 bundled inside). Mount contract: mount(el, props) -> { update, unmount }.",
+  "outDir": "lib-dist",
+  "entries": {
+    "DashboardPage": "DashboardPageProps",
+    "CustomerFormPage": "CustomerFormPageProps",
+    "StatsWidget": "StatsWidgetProps"
+  }
+}

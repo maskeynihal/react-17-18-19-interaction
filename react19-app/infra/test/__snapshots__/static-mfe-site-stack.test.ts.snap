@@ -1,0 +1,514 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`snapshot (no dist) 1`] = `
+{
+  "Description": "Static hosting (S3 + CloudFront) for micro-frontend testapp",
+  "Outputs": {
+    "BucketName": {
+      "Value": {
+        "Ref": "SiteBucket397A1860",
+      },
+    },
+    "DistributionDomainName": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Distribution830FAC52",
+          "DomainName",
+        ],
+      },
+    },
+    "DistributionId": {
+      "Value": {
+        "Ref": "Distribution830FAC52",
+      },
+    },
+    "RemoteEntryUrl": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Fn::GetAtt": [
+                "Distribution830FAC52",
+                "DomainName",
+              ],
+            },
+            "/remoteEntry.js",
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "CorsSecurityHeaders62A08592": {
+      "Properties": {
+        "ResponseHeadersPolicyConfig": {
+          "Comment": "testapp: CORS for cross-origin module federation + security headers",
+          "CorsConfig": {
+            "AccessControlAllowCredentials": false,
+            "AccessControlAllowHeaders": {
+              "Items": [
+                "*",
+              ],
+            },
+            "AccessControlAllowMethods": {
+              "Items": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+            },
+            "AccessControlAllowOrigins": {
+              "Items": [
+                "https://other.example.com",
+              ],
+            },
+            "AccessControlMaxAgeSec": 600,
+            "OriginOverride": true,
+          },
+          "Name": "TestStackCorsSecurityHeaders9A2294CC",
+          "SecurityHeadersConfig": {
+            "ContentTypeOptions": {
+              "Override": true,
+            },
+            "FrameOptions": {
+              "FrameOption": "SAMEORIGIN",
+              "Override": true,
+            },
+            "ReferrerPolicy": {
+              "Override": true,
+              "ReferrerPolicy": "strict-origin-when-cross-origin",
+            },
+            "StrictTransportSecurity": {
+              "AccessControlMaxAgeSec": 63072000,
+              "IncludeSubdomains": true,
+              "Override": true,
+            },
+          },
+        },
+      },
+      "Type": "AWS::CloudFront::ResponseHeadersPolicy",
+    },
+    "Distribution830FAC52": {
+      "Properties": {
+        "DistributionConfig": {
+          "CacheBehaviors": [
+            {
+              "AllowedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+              "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+              "CachedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+              "Compress": true,
+              "PathPattern": "/index.html",
+              "ResponseHeadersPolicyId": {
+                "Ref": "CorsSecurityHeaders62A08592",
+              },
+              "TargetOriginId": "TestStackDistributionOrigin1B0A090BF",
+              "ViewerProtocolPolicy": "redirect-to-https",
+            },
+            {
+              "AllowedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+              "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+              "CachedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+              "Compress": true,
+              "PathPattern": "/remoteEntry.js",
+              "ResponseHeadersPolicyId": {
+                "Ref": "CorsSecurityHeaders62A08592",
+              },
+              "TargetOriginId": "TestStackDistributionOrigin1B0A090BF",
+              "ViewerProtocolPolicy": "redirect-to-https",
+            },
+            {
+              "AllowedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+              "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+              "CachedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+              "Compress": true,
+              "PathPattern": "/config.json",
+              "ResponseHeadersPolicyId": {
+                "Ref": "CorsSecurityHeaders62A08592",
+              },
+              "TargetOriginId": "TestStackDistributionOrigin1B0A090BF",
+              "ViewerProtocolPolicy": "redirect-to-https",
+            },
+            {
+              "AllowedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+              "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+              "CachedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+              "Compress": true,
+              "PathPattern": "/mf-manifest.json",
+              "ResponseHeadersPolicyId": {
+                "Ref": "CorsSecurityHeaders62A08592",
+              },
+              "TargetOriginId": "TestStackDistributionOrigin1B0A090BF",
+              "ViewerProtocolPolicy": "redirect-to-https",
+            },
+          ],
+          "Comment": "testapp (test)",
+          "DefaultCacheBehavior": {
+            "AllowedMethods": [
+              "GET",
+              "HEAD",
+              "OPTIONS",
+            ],
+            "CachePolicyId": {
+              "Ref": "ImmutableAssetsCachePolicyF887E7CD",
+            },
+            "CachedMethods": [
+              "GET",
+              "HEAD",
+              "OPTIONS",
+            ],
+            "Compress": true,
+            "FunctionAssociations": [
+              {
+                "EventType": "viewer-request",
+                "FunctionARN": {
+                  "Fn::GetAtt": [
+                    "SpaRewriteFunction0C4DA631",
+                    "FunctionARN",
+                  ],
+                },
+              },
+            ],
+            "ResponseHeadersPolicyId": {
+              "Ref": "CorsSecurityHeaders62A08592",
+            },
+            "TargetOriginId": "TestStackDistributionOrigin1B0A090BF",
+            "ViewerProtocolPolicy": "redirect-to-https",
+          },
+          "DefaultRootObject": "index.html",
+          "Enabled": true,
+          "HttpVersion": "http2and3",
+          "IPV6Enabled": true,
+          "Origins": [
+            {
+              "DomainName": {
+                "Fn::GetAtt": [
+                  "SiteBucket397A1860",
+                  "RegionalDomainName",
+                ],
+              },
+              "Id": "TestStackDistributionOrigin1B0A090BF",
+              "OriginAccessControlId": {
+                "Fn::GetAtt": [
+                  "DistributionOrigin1S3OriginAccessControlEB606076",
+                  "Id",
+                ],
+              },
+              "S3OriginConfig": {
+                "OriginAccessIdentity": "",
+              },
+            },
+          ],
+          "PriceClass": "PriceClass_100",
+        },
+        "Tags": [
+          {
+            "Key": "app",
+            "Value": "testapp",
+          },
+          {
+            "Key": "env",
+            "Value": "test",
+          },
+          {
+            "Key": "repo",
+            "Value": "test-repo",
+          },
+        ],
+      },
+      "Type": "AWS::CloudFront::Distribution",
+    },
+    "DistributionOrigin1S3OriginAccessControlEB606076": {
+      "Properties": {
+        "OriginAccessControlConfig": {
+          "Name": "TestStackDistributionOrigin1S3OriginAccessControl466A8947",
+          "OriginAccessControlOriginType": "s3",
+          "SigningBehavior": "always",
+          "SigningProtocol": "sigv4",
+        },
+      },
+      "Type": "AWS::CloudFront::OriginAccessControl",
+    },
+    "ImmutableAssetsCachePolicyF887E7CD": {
+      "Properties": {
+        "CachePolicyConfig": {
+          "Comment": "testapp: honour origin Cache-Control; up to 1y for hashed assets",
+          "DefaultTTL": 86400,
+          "MaxTTL": 31536000,
+          "MinTTL": 0,
+          "Name": {
+            "Fn::Join": [
+              "",
+              [
+                "TestStackImmutableAssetsCachePolicyF8887DCA-",
+                {
+                  "Ref": "AWS::Region",
+                },
+              ],
+            ],
+          },
+          "ParametersInCacheKeyAndForwardedToOrigin": {
+            "CookiesConfig": {
+              "CookieBehavior": "none",
+            },
+            "EnableAcceptEncodingBrotli": true,
+            "EnableAcceptEncodingGzip": true,
+            "HeadersConfig": {
+              "HeaderBehavior": "none",
+            },
+            "QueryStringsConfig": {
+              "QueryStringBehavior": "none",
+            },
+          },
+        },
+      },
+      "Type": "AWS::CloudFront::CachePolicy",
+    },
+    "SiteBucket397A1860": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256",
+              },
+            },
+          ],
+        },
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "BucketOwnerEnforced",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "app",
+            "Value": "testapp",
+          },
+          {
+            "Key": "env",
+            "Value": "test",
+          },
+          {
+            "Key": "repo",
+            "Value": "test-repo",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "SiteBucketPolicy3AC1D0F8": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "SiteBucket397A1860",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "SiteBucket397A1860",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "SiteBucket397A1860",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:GetObject",
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceArn": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition",
+                        },
+                        ":cloudfront::",
+                        {
+                          "Ref": "AWS::AccountId",
+                        },
+                        ":distribution/",
+                        {
+                          "Ref": "Distribution830FAC52",
+                        },
+                      ],
+                    ],
+                  },
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudfront.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "SiteBucket397A1860",
+                        "Arn",
+                      ],
+                    },
+                    "/*",
+                  ],
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "SpaRewriteFunction0C4DA631": {
+      "Properties": {
+        "AutoPublish": true,
+        "FunctionCode": "function handler(event) {
+  var request = event.request;
+  var uri = request.uri;
+  var lastSegment = uri.substring(uri.lastIndexOf('/') + 1);
+  if (lastSegment.indexOf('.') === -1) {
+    request.uri = '/index.html';
+  }
+  return request;
+}",
+        "FunctionConfig": {
+          "Comment": "testapp: rewrite extensionless paths to /index.html",
+          "Runtime": "cloudfront-js-2.0",
+        },
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Ref": "AWS::Region",
+              },
+              "TestStackSpaRewriteFunctionB02A7D1E",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "app",
+            "Value": "testapp",
+          },
+          {
+            "Key": "env",
+            "Value": "test",
+          },
+          {
+            "Key": "repo",
+            "Value": "test-repo",
+          },
+        ],
+      },
+      "Type": "AWS::CloudFront::Function",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
