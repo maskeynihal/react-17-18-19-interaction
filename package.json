@@ -12,9 +12,13 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test:e2e": "playwright test",
-    "test:e2e:watch": "SLOWMO=${SLOWMO:-700} playwright test --headed --workers=1 --reporter=list"
+    "test:e2e:watch": "SLOWMO=${SLOWMO:-700} playwright test --headed --workers=1 --reporter=list",
+    "build:lib": "node scripts/build-lib.mjs",
+    "sync:features": "node scripts/sync-features.mjs",
+    "pack:lib": "npm run build:lib && mkdir -p lib-pack && npm pack ./lib-dist --pack-destination lib-pack"
   },
   "dependencies": {
+    "@mfe/portal17-features": "file:vendor/mfe-portal17-features-0.1.0.tgz",
     "@module-federation/runtime": "2.9.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",

@@ -8,3 +8,5 @@ blob-report
 .DS_Store
 infra/cdk.out
 infra/node_modules
+lib-dist
+lib-pack

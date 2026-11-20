@@ -1,33 +1,8 @@
-import { defineConfig, loadEnv, type Plugin } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { federation } from '@module-federation/vite';
 
-/**
- * The federation plugin injects `<link rel="modulepreload" href="<static remote entry>">` into index.html.
- * That hard-codes the build-time portal17 URL (defeating the runtime /config.json override, ADR 0002) and
- * logs a console error whenever the portal is down. Strip cross-origin remoteEntry preloads; the runtime
- * loads the remote entry on demand from the URL registered at boot.
- */
-function stripRemoteEntryPreload(): Plugin {
-  return {
-    name: 'app19:strip-remote-entry-preload',
-    apply: 'build',
-    generateBundle: {
-      order: 'post',
-      handler(_options, bundle) {
-        for (const file of Object.values(bundle)) {
-          if (file.type !== 'asset' || !file.fileName.endsWith('.html')) continue;
-          file.source = String(file.source).replace(
-            /<link rel="modulepreload" crossorigin href="https?:\/\/[^"]+\/remoteEntry\.js">/g,
-            '',
-          );
-        }
-      },
-    },
-  };
-}
-
-// Static default for the portal17 remote (contract §2 / ADR 0002).
+// Build-time default for the portal17 remoteEntry, used only in `"mode": "remote"` (ADR 0002/0004).
 // Runtime override: /config.json -> registerRemotes(..., { force: true }) in src/mfe/remotes.ts.
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
@@ -44,25 +19,18 @@ export default defineConfig(({ mode }) => {
           './CustomerFormPage': './src/exposed/CustomerFormPage.tsx',
           './StatsWidget': './src/exposed/StatsWidget.tsx',
         },
-        remotes: {
-          portal17: {
-            type: 'module',
-            name: 'portal17',
-            entry: PORTAL17_ENTRY,
-            entryGlobalName: 'portal17',
-            shareScope: 'default',
-          },
-        },
+        // No static `remotes` (ADR 0004): the default "bundled" mode imports @mfe/portal17-features at build
+        // time, and a static remote would make the plugin preload / eagerly fetch the portal's remoteEntry.js.
+        // In "remote" mode src/mfe/remotes.ts registers portal17 at runtime from /config.json.
         // Never share react/react-dom/jsx-runtime across React majors (ADR 0001).
         shared: {},
-        // Nothing is shared, so the strategy only affects loading: the default 'version-first' fetches every
-        // remote's remoteEntry.js eagerly at boot (before /config.json can override it). 'loaded-first' loads
-        // a remote only on first loadRemote().
+        // Nothing is shared, so the strategy only affects loading: 'loaded-first' fetches a remote's
+        // remoteEntry.js only on first loadRemote() (the default 'version-first' would fetch eagerly).
         shareStrategy: 'loaded-first',
         dts: false,
       }),
-      stripRemoteEntryPreload(),
     ],
+    define: { __PORTAL17_DEFAULT_ENTRY__: JSON.stringify(PORTAL17_ENTRY) },
     server: {
       port: 5190,
       strictPort: true,

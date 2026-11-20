@@ -51,6 +51,22 @@ load modules with `loadRemote('<name>/<Expose>')`. Missing/invalid config.json
 → keep default (env `VITE_REMOTE_APP19` / `VITE_REMOTE_PORTAL17`, else
 localhost URL). Ship `public/config.json` with localhost URLs.
 
+> **Note (ADR 0004, bundled feature packages — default mode).** The same
+> exposes are also published as npm packages built in Vite library mode with
+> the producer's React bundled in: `@mfe/app19-features` (`./DashboardPage`,
+> `./CustomerFormPage`, `./StatsWidget`) and `@mfe/portal17-features`
+> (`./UsersPage`, `./ProfileCard`); each export is the same `mount` adapter,
+> CSS self-injected (`<style id="mfe-<pkg>-css">`, still `.r17-*`/`.r19-*`
+> scoped), types in `contract.d.ts`. `config.json` gains
+> `"mode": "bundled" | "remote"`; missing/invalid → `bundled`. In `bundled`
+> the host `RemoteMount` resolves `'<name>/<Expose>'` via a loader map to
+> `import('@mfe/<pkg>/<Expose>')` and nothing is fetched from the sibling. In
+> `remote` everything above applies. Static `remotes` were removed from the
+> federation plugin config (no build-time preload/eager fetch); in remote mode
+> the host registers them at runtime from `config.json` (else the build-time
+> default `VITE_REMOTE_*`), so the alias/modulepreload workarounds above no
+> longer apply.
+
 ## 3. Types (`src/mfe/contract.ts`, identical in both repos)
 ```ts
 // ---- mount adapter ----

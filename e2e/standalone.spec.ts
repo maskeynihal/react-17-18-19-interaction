@@ -1,6 +1,7 @@
 import { test, expect, blockPortal, shellReactVersion } from './fixtures';
 
-// Standalone: the portal is deliberately unreachable so these run without the other repo.
+// Standalone: the portal origin is deliberately unreachable (and the sibling-port fixture fails on any
+// request to it). Embedded portal17 features still render — they come from the bundled package (ADR 0004).
 test.describe('standalone app19', () => {
   test.beforeEach(async ({ page, consoleGuard }) => {
     await blockPortal(page, consoleGuard);
@@ -21,12 +22,11 @@ test.describe('standalone app19', () => {
     await expect(page.getByTestId('recent-customer-row')).toHaveCount(5);
   });
 
-  test('portal down: ProfileCard slot shows fallback, rest of dashboard works', async ({ page }) => {
+  test('portal down: ProfileCard still renders on React 17 from the bundled package', async ({ page }) => {
     await page.goto('/');
-    const err = page.getByTestId('profile-slot').getByTestId('remote-error');
-    await expect(err).toBeVisible();
-    await expect(err).toHaveAttribute('role', 'alert');
-    await expect(err.getByTestId('remote-retry')).toBeVisible();
+    const card = page.getByTestId('profile-slot').locator('[data-mfe="ProfileCard"]');
+    await expect(card).toHaveAttribute('data-react-version', '17.0.2');
+    await expect(page.getByTestId('profile-slot').getByTestId('remote-error')).toHaveCount(0);
     await expect(page.getByTestId('kpi-total-value')).toHaveText('6');
     await page.getByRole('link', { name: 'New customer' }).click();
     await expect(page.getByTestId('customer-form')).toBeVisible();
@@ -79,6 +79,6 @@ test.describe('standalone app19', () => {
     const entry = await request.get('/remoteEntry.js');
     expect(entry.ok()).toBe(true);
     const config = await (await request.get('/config.json')).json();
-    expect(config).toEqual({ remotes: { portal17: 'http://localhost:5170/remoteEntry.js' } });
+    expect(config).toEqual({ mode: 'bundled', remotes: { portal17: 'http://localhost:5170/remoteEntry.js' } });
   });
 });

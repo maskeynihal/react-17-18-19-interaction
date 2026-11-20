@@ -1,14 +1,19 @@
-import { test, expect, shellReactVersion, PORTAL17_ORIGIN } from './fixtures';
+import { test, expect, shellReactVersion, expectFeatureMode, PORTAL17_ORIGIN, PORTAL17_ENTRY } from './fixtures';
 
-// Requires the react17-portal preview on :5170 (see README / PORTAL17_DIR).
+// @cross: run in the default "bundled" project (portal17 features from @mfe/portal17-features, no portal
+// server) and, with REMOTE=1, again in the "remote" project (runtime federation from the portal on :5170).
 test.describe('cross-import: app19 hosts portal17 (React 17)', { tag: '@cross' }, () => {
-  test('/legacy/users renders portal17 UsersPage on React 17 inside a React 19 shell', async ({ page }) => {
+  test('/legacy/users renders portal17 UsersPage on React 17 inside a React 19 shell', async ({ page, featureMode, siblingRequests }) => {
     await page.goto('/legacy/users');
+    await expectFeatureMode(page, featureMode);
     const remote = page.locator('[data-remote="portal17/UsersPage"] [data-mfe="UsersPage"]');
     await expect(remote).toBeVisible();
     await expect(remote).toHaveAttribute('data-react-version', '17.0.2');
     expect(await shellReactVersion(page)).toMatch(/^19\./);
     await expect(page.getByTestId('remote-loading')).toHaveCount(0);
+    // bundled: nothing from :5170 (also enforced by the fixture); remote: loaded via the portal's remoteEntry.js
+    if (featureMode === 'remote') expect(siblingRequests).toContain(PORTAL17_ENTRY);
+    else expect(siblingRequests).toEqual([]);
   });
 
   test('selecting a user calls host callback, emits mfe:user-selected and shows banner', async ({ page }) => {
@@ -64,6 +69,20 @@ test.describe('cross-import: app19 hosts portal17 (React 17)', { tag: '@cross' }
     await expect(page.locator('[data-mfe="UsersPage"]')).toHaveCount(1);
   });
 
+  test('documents behaviour: clicks inside the React 17 remote bubble to React 19 host onClick', async ({ page }) => {
+    // ADR 0001: both React versions listen at their root container, and the remote's container is a DOM
+    // descendant of the host's root, so the native click reaches the host root listener and React 19
+    // dispatches the host ancestor's onClick. Remote authors and hosts must not assume isolation.
+    await page.goto('/legacy/users');
+    await expect(page.getByTestId('legacy-panel-clicks')).toHaveText('0');
+    await page.locator('[data-mfe="UsersPage"]').getByTestId('user-row').first().click();
+    await expect(page.getByTestId('selected-user')).toBeVisible();
+    await expect(page.getByTestId('legacy-panel-clicks')).toHaveText('1');
+  });
+});
+
+// @remote: transport-specific (remoteEntry.js fetch / runtime URL override) — only meaningful in remote mode.
+test.describe('runtime federation: app19 loads portal17 remoteEntry (mode "remote")', { tag: '@remote' }, () => {
   test('remote failure shows fallback, rest of app works, retry recovers', async ({ page, consoleGuard }) => {
     consoleGuard.allow(/Failed to load resource: net::ERR_FAILED/);
     await page.route(`${PORTAL17_ORIGIN}/remoteEntry.js`, (route) => route.abort('failed'));
@@ -88,21 +107,35 @@ test.describe('cross-import: app19 hosts portal17 (React 17)', { tag: '@cross' }
   test('runtime /config.json overrides the build-time remote URL (registerRemotes)', async ({ page, consoleGuard }) => {
     consoleGuard.allow(/Failed to load resource: net::ERR_CONNECTION_REFUSED/);
     const bogus = 'http://localhost:5999/remoteEntry.js';
-    await page.route('**/config.json', (route) => route.fulfill({ json: { remotes: { portal17: bogus } } }));
+    await page.route('**/config.json', (route) => route.fulfill({ json: { mode: 'remote', remotes: { portal17: bogus } } }));
     const requested = page.waitForRequest(bogus);
     await page.goto('/');
     await requested;
     await expect(page.getByTestId('profile-slot').getByTestId('remote-error')).toBeVisible();
   });
+});
 
-  test('documents behaviour: clicks inside the React 17 remote bubble to React 19 host onClick', async ({ page }) => {
-    // ADR 0001: both React versions listen at their root container, and the remote's container is a DOM
-    // descendant of the host's root, so the native click reaches the host root listener and React 19
-    // dispatches the host ancestor's onClick. Remote authors and hosts must not assume isolation.
-    await page.goto('/legacy/users');
-    await expect(page.getByTestId('legacy-panel-clicks')).toHaveText('0');
-    await page.locator('[data-mfe="UsersPage"]').getByTestId('user-row').first().click();
-    await expect(page.getByTestId('selected-user')).toBeVisible();
-    await expect(page.getByTestId('legacy-panel-clicks')).toHaveText('1');
+// Bundled-mode analogue of the remote failure test (runs in the "bundled" project only): the feature's
+// code-split chunk from @mfe/portal17-features fails to load → fallback; Retry re-imports it.
+test.describe('bundled feature chunk failure (mode "bundled")', () => {
+  test('chunk load failure shows fallback, rest of app works, retry recovers', async ({ page, consoleGuard, featureMode }) => {
+    test.skip(featureMode !== 'bundled', 'bundled mode only');
+    consoleGuard.allow(/Failed to load resource: net::ERR_FAILED/);
+    const chunk = '**/assets/ProfileCard-*.js';
+    await page.route(chunk, (route) => route.abort('failed'));
+    await page.goto('/');
+
+    const slot = page.getByTestId('profile-slot');
+    await expect(slot.getByTestId('remote-error')).toBeVisible();
+    await expect(page.getByTestId('kpi-total-value')).toHaveText('6');
+    await page.getByRole('link', { name: 'Legacy users' }).click();
+    await expect(page.locator('[data-mfe="UsersPage"]')).toHaveAttribute('data-react-version', '17.0.2');
+    await page.getByRole('link', { name: 'Dashboard' }).click();
+    await expect(slot.getByTestId('remote-error')).toBeVisible();
+
+    await page.unroute(chunk);
+    await slot.getByTestId('remote-retry').click();
+    await expect(slot.locator('[data-mfe="ProfileCard"]')).toHaveAttribute('data-react-version', '17.0.2');
+    await expect(slot.getByTestId('remote-error')).toHaveCount(0);
   });
 });
